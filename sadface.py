@@ -13,7 +13,6 @@ for setting in requiredconfig:
     if not config.has_option(setting[0], setting[1]):
         sys.exit('Error: Option "' + setting[1] + '" in section "' + setting[0] + '" is required! Take a look at your config.ini')
 #
-
 # default settings
 #
 host = config.get('Connection', 'host')
@@ -90,11 +89,28 @@ class sadfaceBot(irc.IRCClient):
 		print "Joined %s." % (channel,)
 
 	def privmsg(self, user, channel, msg):
-		print msg
 		if not user:
+			print "NON-USER:" + msg
 			return
-		if reply == 'True':
+		if reply == '1':
+			print msg
 			if self.nickname in msg:
+
+				time.sleep(0.2) #to prevent flooding
+				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
+				prefix = "%s: " % (user.split('!', 1)[0], )
+			else:
+				prefix = '' 
+
+			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+			if prefix or random.random() <= self.factory.chattiness:
+				sentence = generate_sentence(msg, self.factory.chain_length,
+					self.factory.max_words)
+				if sentence:
+					self.msg(self.factory.channel, prefix + sentence)
+		elif reply == '2':
+			print msg
+			if self.nickname + "[:,#]* ?" in msg:
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = "%s: " % (user.split('!', 1)[0], )
@@ -108,6 +124,7 @@ class sadfaceBot(irc.IRCClient):
 				if sentence:
 					self.msg(self.factory.channel, prefix + sentence)
 		else: 	#for when you don't want it talking back
+			print msg
 			prefix = '' 
 
 			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
