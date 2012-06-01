@@ -22,6 +22,7 @@ s/\///g
 s/> \n//g
 s/\x0A/\n/g
 s/\n\n/\n/g
+s/\n \n/\n/g
 s/\.\n/\. /g
 s/\n/ /g
 s/\n /\n/g
