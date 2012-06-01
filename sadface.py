@@ -32,6 +32,7 @@ reply = config.get('Brain', 'reply')
 markov = defaultdict(list)
 brain_file = config.get('Brain', 'brain_file')
 STOP_WORD = config.get('Brain', 'STOP_WORD')
+# Chain_length is the length of the message that sadface compares 
 chain_length = int(config.get('Brain', 'chain_length'))
 chattiness = float(config.get('Brain', 'chattiness'))
 max_words = int(config.get('Brain', 'max_words'))
@@ -48,9 +49,13 @@ def add_to_brain(msg, chain_length, write_to_file=False):
 		buf.append(word)
 	markov[tuple(buf)].append(STOP_WORD)
 
-def generate_sentence(msg, chain_length, max_words=10000):
+# TODO
+# Find the brain state, keep it saved on disk instead of in RAM.
+
+def generate_sentence(msg, chain_length, max_words=10000): #max_words is defined elsewhere
 	buf = msg.split()[:chain_length]
-	if len(msg.split()) > chain_length:
+# If message is longer than chain_length, shorten the message.
+	if len(msg.split()) > chain_length: 
 		message = buf[:]
 	else:
 		message = []
@@ -64,7 +69,7 @@ def generate_sentence(msg, chain_length, max_words=10000):
 		if next_word == STOP_WORD:
 			break
 		message.append(next_word)
-		del buf[0]
+		del buf[0] # What happpens if this is moved down a line?
 		buf.append(next_word)
 	return ' '.join(message)
 
@@ -89,13 +94,17 @@ class sadfaceBot(irc.IRCClient):
 		print "Joined %s." % (channel,)
 
 	def privmsg(self, user, channel, msg):
+# TODO
+# make the privmsg class run:
+#	check for user
+#	check for reply
+#		check for self.
+		print channel + " <" + user.split('!', 1)[0] + "> " + msg # user is the speaker. 
 		if not user:
-			print "NON-USER:" + msg
+			print "NON-USER:" + msg 
 			return
 		if reply == '1':
-			print msg
 			if self.nickname in msg:
-
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = "%s: " % (user.split('!', 1)[0], )
@@ -103,26 +112,32 @@ class sadfaceBot(irc.IRCClient):
 				prefix = '' 
 
 			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+			print "\t" + msg
 			if prefix or random.random() <= self.factory.chattiness:
 				sentence = generate_sentence(msg, self.factory.chain_length,
 					self.factory.max_words)
 				if sentence:
 					self.msg(self.factory.channel, prefix + sentence)
 		elif reply == '2':
-			print msg
-			if self.nickname + "[:,#]* ?" in msg:
+# this should eventually match "nickname:" or "nickname," or "nickname#" (because of Noxz)
+# instead, it matches just "nickname:"
+			if msg.startswith(self.nickname + ":"):
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = "%s: " % (user.split('!', 1)[0], )
 			else:
+				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = '' 
 
 			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+			print "\t" + msg
 			if prefix or random.random() <= self.factory.chattiness:
 				sentence = generate_sentence(msg, self.factory.chain_length,
 					self.factory.max_words)
 				if sentence:
 					self.msg(self.factory.channel, prefix + sentence)
+
+
 		else: 	#for when you don't want it talking back
 			print msg
 			prefix = '' 
@@ -131,9 +146,15 @@ class sadfaceBot(irc.IRCClient):
 			if prefix or random.random() <= self.factory.chattiness:
 				sentence = generate_sentence(msg, self.factory.chain_length,
 					self.factory.max_words)
-
-
-	
+#
+# Idea for later implementation
+# To limit who gets to talk to the bot, the talker's nickname is self.nickname
+# if user in allowed_people:
+#	Check that user is okayed with nickserv
+#	pass
+# else:
+#	fail
+#	
 class sadfaceBotFactory(protocol.ClientFactory):
 	protocol = sadfaceBot
 
