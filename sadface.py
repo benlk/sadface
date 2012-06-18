@@ -119,9 +119,8 @@ class sadfaceBot(irc.IRCClient):
 				if sentence:
 					self.msg(self.factory.channel, prefix + sentence)
 		elif reply == '2':
-# this should eventually match "nickname:" or "nickname," or "nickname#" (because of Noxz)
-# instead, it matches just "nickname:"
-			if msg.startswith(self.nickname + ":"):
+			# this matches any line starting with nickname
+			if msg.startswith(self.nickname):
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = "%s: " % (user.split('!', 1)[0], )
