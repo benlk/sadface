@@ -186,6 +186,8 @@ if __name__ == "__main__":
 			add_to_brain(line, chain_length)
 		print 'Brain reloaded'
 		f.close()
+	else:
+		print "Hoi! I need me some brains! Whaddya think I am, the Tin Man?"
 	reactor.connectTCP(host, port, sadfaceBotFactory('#' + channel, nickname, chain_length, chattiness, max_words))
 	reactor.run()
 
