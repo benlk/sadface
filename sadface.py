@@ -170,6 +170,7 @@ class sadfaceBotFactory(protocol.ClientFactory):
 
 	def clientConnectionFailed(self, connector, reason):
 		print "Could not connect: %s" % (reason,)
+		quit()
 #
 #	We begin!
 #
