@@ -35,13 +35,15 @@ versionName = "sadface bot rev. 9"
 reply = config.get('Brain', 'reply')
 markov = defaultdict(list)
 brain_file = config.get('Brain', 'brain_file')
-ignore_file = config.get('Brain', 'ignore_file')
 STOP_WORD = config.get('Brain', 'STOP_WORD')
 # Chain_length is the length of the message that sadface compares 
 chain_length = int(config.get('Brain', 'chain_length'))
 chattiness = float(config.get('Brain', 'chattiness'))
 max_words = int(config.get('Brain', 'max_words'))
-
+ignore_file = config.get('Brain', 'ignore_file')
+ignore_nicks = []
+for line in open(ignore_file, 'r'):
+	ignore_nicks.append(line.strip())
 #
 # Begin actual code
 #
@@ -83,16 +85,9 @@ def generate_sentence(msg, chain_length, max_words=10000): #max_words is defined
 	return ' '.join(message)
 
 def ignore(user):
-	for line in open(filename, 'r'):
-		if user in line:
-			return True
-		else:
-			return False
-
-#	if user in ignore_dict:
-#		return True
-#	else:
-#		return False
+	if user in ignore_nicks:
+		return True
+	return False
 
 class sadfaceBot(irc.IRCClient):
 
@@ -121,20 +116,21 @@ class sadfaceBot(irc.IRCClient):
 #	check for reply
 #		check for self.
 
+		user_nick = user.split('!', 1)[0]
 		# Prints the message to stdout
-		print channel + " <" + user.split('!', 1)[0] + "> " + msg # user is the speaker. 
+		print channel + " <" + user_nick + "> " + msg # user is the speaker. 
 		if not user:
 			print "NON-USER:" + msg 
 			return
 		# Ignores the message if the person is in the ignore list
-		elif ignore == True:
-			print "Ignored message from <" + user + "> at: " 
+		elif ignore(user_nick):
+			print "Ignored message from <" + user_nick + "> at: " 
 		# Replies to messages containing the bot's name
 		elif reply == '1':
 			if self.nickname in msg:
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user.split('!', 1)[0], )
+				prefix = "%s: " % (user_nick, )
 			else:
 				prefix = '' 
 
@@ -150,7 +146,7 @@ class sadfaceBot(irc.IRCClient):
 			if msg.startswith(self.nickname): #matches nickname, mecause of Noxz
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user.split('!', 1)[0], )
+				prefix = "%s: " % (user_nick, )
 			else:
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = '' 
