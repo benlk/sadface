@@ -1,10 +1,11 @@
 __author__ = "Benjamin Keith (ben@benlk.com)"
 
-import sys, os, random, re, time, ConfigParser
+import sys, os, random, re, ConfigParser
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 from twisted.internet import reactor
 from collections import defaultdict
+from time import localtime, strftime 
 
 #
 # Setting some settings
@@ -124,7 +125,8 @@ class sadfaceBot(irc.IRCClient):
 			return
 		# Ignores the message if the person is in the ignore list
 		elif ignore(user_nick):
-			print "Ignored message from <" + user_nick + "> at: " 
+			print "Ignored message from <" + user_nick + "> at: " + strftime("%a, %d %b %Y %H:%M:%S %Z", localtime()) 
+			# Time method from http://stackoverflow.com/a/415527
 		# Replies to messages containing the bot's name
 		elif reply == '1':
 			if self.nickname in msg:
