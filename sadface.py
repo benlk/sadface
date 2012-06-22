@@ -1,20 +1,24 @@
+__author__ = "Benjamin Keith (ben@benlk.com)"
+
 import sys, os, random, re, time, ConfigParser
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 from twisted.internet import reactor
 from collections import defaultdict
 
+#
+# Setting some settings
+#
+
 config_file = sys.argv[1]
 
-requiredconfig = [('Connection', 'host'), ('Connection', 'port'), ('Bot', 'nickname'), ('Bot', 'erroneousNickFallback'), ('Bot', 'Channel'), ('Bot', 'realname'), ('Bot', 'username'), ('Bot', 'userinfo'), ('Bot', 'versionName'), ('Brain', 'reply'), ('Brain', 'brain_file'), ('Brain', 'STOP_WORD'), ('Brain', 'chain_length'), ('Brain', 'chattiness'), ('Brain', 'max_words')];
+requiredconfig = [('Connection', 'host'), ('Connection', 'port'), ('Bot', 'nickname'), ('Bot', 'erroneousNickFallback'), ('Bot', 'Channel'), ('Bot', 'realname'), ('Bot', 'username'), ('Bot', 'userinfo'), ('Brain', 'reply'), ('Brain', 'brain_file'), ('Brain', 'ignore_file'), ('Brain', 'STOP_WORD'), ('Brain', 'chain_length'), ('Brain', 'chattiness'), ('Brain', 'max_words')];
 config = ConfigParser.ConfigParser()
 config.read(config_file)
 for setting in requiredconfig:
     if not config.has_option(setting[0], setting[1]):
         sys.exit('Error: Option "' + setting[1] + '" in section "' + setting[0] + '" is required! Take a look at your config.ini')
-#
-# default settings
-#
+
 host = config.get('Connection', 'host')
 port = int(config.get('Connection', 'port'))
 password = config.get('Connection', 'password')
@@ -26,7 +30,7 @@ chan = channel
 realname = config.get('Bot', 'realname')
 username = config.get('Bot', 'username')
 userinfo = config.get('Bot', 'userinfo')
-versionName = config.get('Bot', 'versionName')
+versionName = "sadface bot rev. 9"
 
 reply = config.get('Brain', 'reply')
 markov = defaultdict(list)
@@ -36,6 +40,13 @@ STOP_WORD = config.get('Brain', 'STOP_WORD')
 chain_length = int(config.get('Brain', 'chain_length'))
 chattiness = float(config.get('Brain', 'chattiness'))
 max_words = int(config.get('Brain', 'max_words'))
+ignore_file = config.get('Brain', 'ignore_file')
+ignore_nicks = []
+for line in open(ignore_file, 'r'):
+	ignore_nicks.append(line.strip())
+#
+# Begin actual code
+#
 
 def add_to_brain(msg, chain_length, write_to_file=False):
 	if write_to_file:
@@ -73,6 +84,11 @@ def generate_sentence(msg, chain_length, max_words=10000): #max_words is defined
 		buf.append(next_word)
 	return ' '.join(message)
 
+def ignore(user):
+	if user in ignore_nicks:
+		return True
+	return False
+
 class sadfaceBot(irc.IRCClient):
 
 	irc.IRCClient.realname = realname
@@ -99,37 +115,44 @@ class sadfaceBot(irc.IRCClient):
 #	check for user
 #	check for reply
 #		check for self.
-		print channel + " <" + user.split('!', 1)[0] + "> " + msg # user is the speaker. 
+
+		user_nick = user.split('!', 1)[0]
+		# Prints the message to stdout
+		print channel + " <" + user_nick + "> " + msg # user is the speaker. 
 		if not user:
 			print "NON-USER:" + msg 
 			return
-		if reply == '1':
+		# Ignores the message if the person is in the ignore list
+		elif ignore(user_nick):
+			print "Ignored message from <" + user_nick + "> at: " 
+		# Replies to messages containing the bot's name
+		elif reply == '1':
 			if self.nickname in msg:
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user.split('!', 1)[0], )
+				prefix = "%s: " % (user_nick, )
 			else:
 				prefix = '' 
 
 			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
-			print "\t" + msg
+			print "\t" + msg #prints to stdout sadface added to brain
 			if prefix or random.random() <= self.factory.chattiness:
 				sentence = generate_sentence(msg, self.factory.chain_length,
 					self.factory.max_words)
 				if sentence:
 					self.msg(self.factory.channel, prefix + sentence)
+		# Replies to messages starting with the bot's name.
 		elif reply == '2':
-			# this matches any line starting with nickname
-			if msg.startswith(self.nickname):
+			if msg.startswith(self.nickname): #matches nickname, mecause of Noxz
 				time.sleep(0.2) #to prevent flooding
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user.split('!', 1)[0], )
+				prefix = "%s: " % (user_nick, )
 			else:
 				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
 				prefix = '' 
 
 			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
-			print "\t" + msg
+			print "\t" + msg #prints to stdout what sadface added to brain
 			if prefix or random.random() <= self.factory.chattiness:
 				sentence = generate_sentence(msg, self.factory.chain_length,
 					self.factory.max_words)
