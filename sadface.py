@@ -119,7 +119,7 @@ class sadfaceBot(irc.IRCClient):
 
 		user_nick = user.split('!', 1)[0]
 		# Prints the message to stdout
-		print channel + " <" + user_nick + "> " + msg # user is the speaker. 
+		print channel + " <" + user_nick + "> " + msg 
 		if not user:
 			print "NON-USER:" + msg 
 			return
