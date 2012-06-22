@@ -1,6 +1,6 @@
 __author__ = "Benjamin Keith (ben@benlk.com)"
 
-import sys, os, random, re, ConfigParser
+import sys, os, random, re, time, ConfigParser
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 from twisted.internet import reactor
@@ -31,7 +31,7 @@ chan = channel
 realname = config.get('Bot', 'realname')
 username = config.get('Bot', 'username')
 userinfo = config.get('Bot', 'userinfo')
-versionName = "sadface bot rev. 9"
+versionName = "sadface bot rev. 10"
 
 reply = config.get('Brain', 'reply')
 markov = defaultdict(list)
