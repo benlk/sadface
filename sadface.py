@@ -44,176 +44,179 @@ max_words = int(config.get('Brain', 'max_words'))
 ignore_file = config.get('Brain', 'ignore_file')
 ignore_nicks = []
 for line in open(ignore_file, 'r'):
-	ignore_nicks.append(line.strip())
+    ignore_nicks.append(line.strip())
 #
 # Begin actual code
 #
 
 def add_to_brain(msg, chain_length, write_to_file=False):
-	if write_to_file:
-		f = open(brain_file, 'a')
-		f.write(msg + '\n')
-		f.close()
-	buf = [STOP_WORD] * chain_length
-	for word in msg.split():
-		markov[tuple(buf)].append(word)
-		del buf[0]
-		buf.append(word)
-	markov[tuple(buf)].append(STOP_WORD)
+    if write_to_file:
+        f = open(brain_file, 'a')
+        f.write(msg + '\n')
+        f.close()
+    buf = [STOP_WORD] * chain_length
+    for word in msg.split():
+        markov[tuple(buf)].append(word)
+        del buf[0]
+        buf.append(word)
+    markov[tuple(buf)].append(STOP_WORD)
 
 # TODO
 # Find the brain state, keep it saved on disk instead of in RAM.
 
-def generate_sentence(msg, chain_length, max_words=10000): #max_words is defined elsewhere
-	buf = msg.split()[:chain_length]
+def generate_sentence(msg, chain_length, max_words=1000): #max_words is defined elsewhere
+    buf = msg.split()[:chain_length]
 # If message is longer than chain_length, shorten the message.
-	if len(msg.split()) > chain_length: 
-		message = buf[:]
-	else:
-		message = []
-		for i in xrange(chain_length):
-			message.append(random.choice(markov[random.choice(markov.keys())]))
-	for i in xrange(max_words):
-		try:
-			next_word = random.choice(markov[tuple(buf)])
-		except IndexError:
-			continue
-		if next_word == STOP_WORD:
-			break
-		message.append(next_word)
-		del buf[0] # What happpens if this is moved down a line?
-		buf.append(next_word)
-	return ' '.join(message)
+    if len(msg.split()) > chain_length: 
+        message = buf[:]
+    else:
+        message = []
+        for i in xrange(chain_length):
+            message.append(random.choice(markov[random.choice(markov.keys())]))
+    for i in xrange(max_words):
+        try:
+            next_word = random.choice(markov[tuple(buf)])
+        except IndexError:
+            continue
+        if next_word == STOP_WORD:
+            break
+        message.append(next_word)
+        del buf[0] # What happpens if this is moved down a line?
+        buf.append(next_word)
+    return ' '.join(message)
 
 def ignore(user):
-	if user in ignore_nicks:
-		return True
-	return False
+    if user in ignore_nicks:
+        return True
+    return False
 
 class sadfaceBot(irc.IRCClient):
+    realname = realname
+    username = username
+    userinfo = userinfo
+    versionName = versionName
+    erroneousNickFallback = erroneousNickFallback
+    password = password
 
-	irc.IRCClient.realname = realname
-	irc.IRCClient.username = username
-	irc.IRCClient.userinfo = userinfo
-	irc.IRCClient.versionName = versionName
-	irc.IRCClient.erroneousNickFallback = erroneousNickFallback
-	irc.IRCClient.password = password
+    def _get_nickname(self):
+        return self.factory.nickname
+    nickname = property(_get_nickname)
 
-	def _get_nickname(self):
-		return self.factory.nickname
-	nickname = property(_get_nickname)
+    def signedOn(self):
+        self.join(self.factory.channel)
+        print "signed on as %s." % (self.nickname,)
 
-	def signedOn(self):
-		self.join(self.factory.channel)
-		print "signed on as %s." % (self.nickname,)
+    def joined(self, channel):
+        print "Joined %s." % (channel,)
 
-	def joined(self, channel):
-		print "Joined %s." % (channel,)
-
-	def privmsg(self, user, channel, msg):
+    def privmsg(self, user, channel, msg):
 # TODO
 # make the privmsg class run:
-#	check for user
-#	check for reply
-#		check for self.
+#    check for user
+#    check for reply
+#        check for self.
 
-		user_nick = user.split('!', 1)[0]
-		# Prints the message to stdout
-		print channel + " <" + user_nick + "> " + msg 
-		if not user:
-			print "NON-USER:" + msg 
-			return
-		# Ignores the message if the person is in the ignore list
-		elif ignore(user_nick):
-			print "Ignored message from <" + user_nick + "> at: " + strftime("%a, %d %b %Y %H:%M:%S %Z", localtime()) 
-			# Time method from http://stackoverflow.com/a/415527
-		# Replies to messages containing the bot's name
-		elif reply == '1':
-			if self.nickname in msg:
-				time.sleep(0.2) #to prevent flooding
-				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user_nick, )
-			else:
-				prefix = '' 
+        user_nick = user.split('!', 1)[0]
+        # Prints the message to stdout
+        print channel + " <" + user_nick + "> " + msg 
+        if not user:
+            print "NON-USER:" + msg 
+            return
+        # Ignores the message if the person is in the ignore list
+        elif ignore(user_nick):
+            print "Ignored message from <" + user_nick + "> at: " + strftime("%a, %d %b %Y %H:%M:%S %Z", localtime()) 
+            # Time method from http://stackoverflow.com/a/415527
+        # Replies to messages containing the bot's name
+        elif reply == '1':
+            if self.nickname in msg:
+                time.sleep(0.2) #to prevent flooding
+                msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
+                prefix = "%s: " % (user_nick, )
+            else:
+                prefix = '' 
 
-			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
-			print "\t" + msg #prints to stdout sadface added to brain
-			if prefix or random.random() <= self.factory.chattiness:
-				sentence = generate_sentence(msg, self.factory.chain_length,
-					self.factory.max_words)
-				if sentence:
-					self.msg(self.factory.channel, prefix + sentence)
-		# Replies to messages starting with the bot's name.
-		elif reply == '2':
-			if msg.startswith(self.nickname): #matches nickname, mecause of Noxz
-				time.sleep(0.2) #to prevent flooding
-				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = "%s: " % (user_nick, )
-			else:
-				msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
-				prefix = '' 
+            add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+            print "\t" + msg #prints to stdout what sadface added to brain
+            if prefix or random.random() <= self.factory.chattiness:
+                sentence = generate_sentence(msg, self.factory.chain_length,
+                    self.factory.max_words)
+                if sentence:
+                    self.msg(self.factory.channel, prefix + sentence)
+                    print "\t" + sentence #prints to stdout what sadface said
+        # Replies to messages starting with the bot's name.
+        elif reply == '2':
+            if msg.startswith(self.nickname): #matches nickname, mecause of Noxz
+                time.sleep(0.2) #to prevent flooding
+                msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
+                prefix = "%s: " % (user_nick, )
+            else:
+                msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
+                prefix = '' 
 
-			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
-			print "\t" + msg #prints to stdout what sadface added to brain
-			if prefix or random.random() <= self.factory.chattiness:
-				sentence = generate_sentence(msg, self.factory.chain_length,
-					self.factory.max_words)
-				if sentence:
-					self.msg(self.factory.channel, prefix + sentence)
+            add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+            print "\t" + msg #prints to stdout what sadface added to brain
+            if prefix or random.random() <= self.factory.chattiness:
+                sentence = generate_sentence(msg, self.factory.chain_length,
+                    self.factory.max_words)
+                if sentence:
+                    self.msg(self.factory.channel, prefix + sentence)
+                    print "\t" + sentence #prints to stdout what sadface said
 
 
-		else: 	#for when you don't want it talking back
-			print msg
-			prefix = '' 
+        else:     #for when you don't want it talking back
+            print msg
+            prefix = '' 
 
-			add_to_brain(msg, self.factory.chain_length, write_to_file=True)
-			if prefix or random.random() <= self.factory.chattiness:
-				sentence = generate_sentence(msg, self.factory.chain_length,
-					self.factory.max_words)
+            add_to_brain(msg, self.factory.chain_length, write_to_file=True)
+            if prefix or random.random() <= self.factory.chattiness:
+#                sentence = generate_sentence(msg, self.factory.chain_length,
+#                    self.factory.max_words)
+		pass
 #
 # Idea for later implementation
 # To limit who gets to talk to the bot, the talker's nickname is self.nickname
 # if user in allowed_people:
-#	Check that user is okayed with nickserv
-#	pass
+#    Check that user is okayed with nickserv
+#    pass
 # else:
-#	fail
-#	
+#    fail
+#    
+
 class sadfaceBotFactory(protocol.ClientFactory):
-	protocol = sadfaceBot
+    protocol = sadfaceBot
 
-	def __init__(self, channel, nickname, chain_length, chattiness, max_words):
-		self.channel = channel
-		self.nickname = nickname
-		self.chain_length = chain_length
-		self.chattiness = chattiness
-		self.max_words = max_words
+    def __init__(self, channel, nickname, chain_length, chattiness, max_words):
+        self.channel = channel
+        self.nickname = nickname
+        self.chain_length = chain_length
+        self.chattiness = chattiness
+        self.max_words = max_words
 
-	def clientConnectionLost(self, connector, reason):
-		print "Lost connection (%s), reconnecting." % (reason,)
-		connector.connect()
+    def clientConnectionLost(self, connector, reason):
+        print "Lost connection (%s), reconnecting." % (reason,)
+        connector.connect()
 
-	def clientConnectionFailed(self, connector, reason):
-		print "Could not connect: %s" % (reason,)
-		quit()
+    def clientConnectionFailed(self, connector, reason):
+        print "Could not connect: %s" % (reason,)
+        quit()
 #
-#	We begin!
+#    We begin!
 #
 
 if __name__ == "__main__":
-	config_file = sys.argv[1]
-	if config_file == False:
-		print "Please specify a valid config file in the arguments." 
-		print "Example:"
-		print "python sadface_configgable.py default.ini"
-	if os.path.exists(brain_file):
-		f = open(brain_file, 'r')
-		for line in f:
-			add_to_brain(line, chain_length)
-		print 'Brain reloaded'
-		f.close()
-	else:
-		print "Hoi! I need me some brains! Whaddya think I am, the Tin Man?"
-	reactor.connectTCP(host, port, sadfaceBotFactory('#' + channel, nickname, chain_length, chattiness, max_words))
-	reactor.run()
+    config_file = sys.argv[1]
+    if config_file == False:
+        print "Please specify a valid config file in the arguments." 
+        print "Example:"
+        print "python sadface_configgable.py default.ini"
+    if os.path.exists(brain_file):
+        f = open(brain_file, 'r')
+        for line in f:
+            add_to_brain(line, chain_length)
+        print 'Brain reloaded'
+        f.close()
+    else:
+        print "Hoi! I need me some brains! Whaddya think I am, the Tin Man?"
+    reactor.connectTCP(host, port, sadfaceBotFactory('#' + channel, nickname, chain_length, chattiness, max_words))
+    reactor.run()
 
