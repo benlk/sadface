@@ -1,6 +1,6 @@
 __author__ = "Benjamin Keith (ben@benlk.com)"
 
-import sys, os, random, re, time, ConfigParser
+import sys, os, random, re, time, ConfigParser, string
 from twisted.words.protocols import irc
 from twisted.internet import protocol
 from twisted.internet import reactor
@@ -37,6 +37,7 @@ reply = config.get('Brain', 'reply')
 markov = defaultdict(list)
 brain_file = config.get('Brain', 'brain_file')
 STOP_WORD = config.get('Brain', 'STOP_WORD')
+# punctuation = ['\n', '.', '?', '!', ',', '\r']
 # Chain_length is the length of the message that sadface compares 
 chain_length = int(config.get('Brain', 'chain_length'))
 chattiness = float(config.get('Brain', 'chattiness'))
@@ -65,7 +66,17 @@ def add_to_brain(msg, chain_length, write_to_file=False):
 # Find the brain state, keep it saved on disk instead of in RAM.
 
 def generate_sentence(msg, chain_length, max_words=1000): #max_words is defined elsewhere
+    if msg[-1][-1] in string.punctuation: 
+#        msg[-1] = msg[-1][:-1]
+#        msg.replace([-1], '')
+# converts string to list, drops the end character, converts back to string
+        msg = list(msg)
+        msg[-1] = msg[-1][:-1]
+        msg[0] = msg[0].upper()
+        msg = "".join(msg)
+#    buf = msg.split()[-chain_length:] 
     buf = msg.split()[:chain_length]
+   
 # If message is longer than chain_length, shorten the message.
     if len(msg.split()) > chain_length: 
         message = buf[:]
@@ -124,7 +135,7 @@ class sadfaceBot(irc.IRCClient):
             return
         # Ignores the message if the person is in the ignore list
         elif ignore(user_nick):
-            print "Ignored message from <" + user_nick + "> at: " + strftime("%a, %d %b %Y %H:%M:%S %Z", localtime()) 
+            print "\t" + "Ignored message from <" + user_nick + "> at: " + strftime("%a, %d %b %Y %H:%M:%S %Z", localtime()) 
             # Time method from http://stackoverflow.com/a/415527
         # Replies to messages containing the bot's name
         elif reply == '1':
@@ -142,7 +153,7 @@ class sadfaceBot(irc.IRCClient):
                     self.factory.max_words)
                 if sentence:
                     self.msg(self.factory.channel, prefix + sentence)
-                    print "\t" + sentence #prints to stdout what sadface said
+                    print ">" + "\t" + sentence #prints to stdout what sadface said
         # Replies to messages starting with the bot's name.
         elif reply == '2':
             if msg.startswith(self.nickname): #matches nickname, mecause of Noxz
@@ -160,7 +171,7 @@ class sadfaceBot(irc.IRCClient):
                     self.factory.max_words)
                 if sentence:
                     self.msg(self.factory.channel, prefix + sentence)
-                    print "\t" + sentence #prints to stdout what sadface said
+                    print ">" + "\t" + sentence #prints to stdout what sadface said
 
 
         else:     #for when you don't want it talking back
@@ -171,7 +182,7 @@ class sadfaceBot(irc.IRCClient):
             if prefix or random.random() <= self.factory.chattiness:
 #                sentence = generate_sentence(msg, self.factory.chain_length,
 #                    self.factory.max_words)
-		pass
+                pass
 #
 # Idea for later implementation
 # To limit who gets to talk to the bot, the talker's nickname is self.nickname
