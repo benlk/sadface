@@ -144,6 +144,10 @@ class sadfaceBot(irc.IRCClient):
                 time.sleep(0.2) #to prevent flooding
                 msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg)
                 prefix = "%s: " % (user_nick, )
+            elif msg.lower().translate(string.maketrans("",""), string.punctuation).startswith(("hello", "hi", "sup", "howdy", "hola", "salutation", "yo", "greeting", "what up")):
+		time.sleep(0.2) #to prevent flooding
+                msg = re.compile(self.nickname + "[:,]* ?", re.I).sub('', msg) + " to you"
+                prefix = "%s: " % (user_nick, )
             else:
                 prefix = '' 
 
