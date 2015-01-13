@@ -55,7 +55,7 @@ to the brain file. This can have a different name, set in the `.ini` file
 
 - Python 2.7.3  
 
-- [python-twisted](http://twistedmatrix.com/trac/wiki/Downloads
+- [python-twisted](http://twistedmatrix.com/trac/wiki/Downloads)
 
 ## Credits
 
