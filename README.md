@@ -1,8 +1,8 @@
-	
-	sadface
-		an IRC Markov Chain chatbot by Benjamin Keith
+# sadface
 
-# INTRO
+an IRC Markov Chain chatbot
+
+## Intro
 
 Markov bots make for amusing text generators. They don’t make much sense, 
 usually. When they do make sense, it’s pure chance.
@@ -28,47 +28,43 @@ Separate sentences by newlines. Replies look best if there are no quotes
 or tabs in brain_file.txt. You can specify different brain files with your 
 config.ini.
 
-# INCLUDED
+## Included files
 
-## sadface.py
+`sadface.py`
 
 Usage: `python sadface.py /path/to/config.ini`
 
 sadface also requires brain_file.txt, which is a flat txt file of newline-
 separated sentences. brain_file.txt is specified in config.ini
 
-## default.ini
+`default.ini`
 
 The example configuration
 
-## sed_cleaning.sh
+`sed_cleaning.sh`
 
 Usage: `sed_cleaning.sh old_brain.txt temporaryfile clean_brain.txt`
 
 A sed script that cleans up brain_file.txt by writing it to a new brain_file. 
 Add whatever you need to to clean up the files you feed sadface.
 
-# MAKE ON YOUR OWN
-## brain_file.txt
-A flat txt file of newline-separated sentences. sadface draws from 
-brain_file.txt to create its replies, and adds things said in-channel 
-to its brain file. 
-	
+## Prerequisites
 
-DEPENDENCIES
-	Python 2.7.3
-		available in repositories or at Python.org
-		http://www.python.org/download/
-	python-twisted
-		available in the Ubuntu, Debian and openSUSE repositories
-		source at http://twistedmatrix.com/trac/wiki/Downloads
-		Windows and Mac installers at http://twistedmatrix.com/trac/wiki/Downloads
+- `brain_file.txt`: A flat text file of newline-separated sentences. sadface draws from `brain_file.txt` to create its replies, and adds things said in-channel 
+to the brain file. This can have a different name, set in the `.ini` file
 
-CREDITS
-	Eric Florenzano
-		sadface derives heavily from his MomBot Markov bot code
-		http://eflorenzano.com/blog/2008/11/16/writing-markov-chain-irc-bot-twisted-and-python/
-	hhokanson
-		sadface's configuration methods derive from her AnonBot IRC anonymizer bot
-		https://bitbucket.org/hhokanson/anonbot/src
+- Python 2.7.3  
+
+- [python-twisted](http://twistedmatrix.com/trac/wiki/Downloads
+
+## Credits
+
+- Eric Florenzano
+	- sadface derives heavily from his MomBot Markov bot code
+	- http://eflorenzano.com/blog/2008/11/16/writing-markov-chain-irc-bot-twisted-and-python/
+	- http://wayback.archive.org/web/20130106092748/http://eflorenzano.com/blog/2008/11/16/writing-markov-chain-irc-bot-twisted-and-python/
+
+- hhokanson
+	- sadface's configuration methods derive from her AnonBot IRC anonymizer bot
+	- https://bitbucket.org/hhokanson/anonbot/src
 
