@@ -119,6 +119,7 @@ class sadfaceBot(irc.IRCClient):
 
     def joined(self, channel):
         print "Joined %s." % (channel,)
+        self.msg(self.factory.channel, "OP ME GO BUCKS!")
 
     def privmsg(self, user, channel, msg):
 # TODO
